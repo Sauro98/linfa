@@ -8,6 +8,8 @@ use super::{
     iter::Iter, Dataset, DatasetBase, DatasetView, Float, Label, Labels, Records, Targets,
 };
 
+use crate::traits::Fit;
+
 impl<F: Float, L: Label> DatasetBase<Array2<F>, Vec<L>> {
     pub fn iter(&self) -> Iter<'_, Array2<F>, Vec<L>> {
         Iter::new(&self.records, &self.targets)
@@ -307,6 +309,84 @@ impl<F: Float, E: Copy> Dataset<F, E> {
     pub fn fold(&self, k: usize) -> Vec<(Dataset<F, E>, Dataset<F, E>)> {
         self.view().fold(k)
     }
+
+    pub fn axis_chunks_iter(
+        &self,
+        axis: Axis,
+        chunk_size: usize,
+    ) -> impl Iterator<Item = DatasetView<F, E>> {
+        self.records()
+            .axis_chunks_iter(axis, chunk_size)
+            .zip(self.targets().axis_chunks_iter(axis, chunk_size))
+            .map(|(rec, tar)| (rec, tar).into())
+    }
+
+    pub fn fold_fit<
+        'a,
+        O: 'a,
+        A: Fit<'a, Array2<F>, Array1<E>, Object = O>,
+        C: 'a + Fn(&A, DatasetView<F, E>) -> O,
+    >(
+        &'a mut self,
+        k: usize,
+        params: &'a A,
+        fit_closure: C,
+    ) -> impl Iterator<Item = (O, DatasetView<F, E>)> + 'a {
+        let samples_count = self.targets().len();
+        let fold_size = samples_count / k;
+
+        let features = self.records.dim().1;
+
+        let mut records_sl = self.records.as_slice_mut().unwrap();
+        let mut targets_sl = self.targets.as_slice_mut().unwrap();
+
+        let mut objs: Vec<O> = Vec::new();
+
+        for i in 0..k {
+            assist_swap_array2(&mut records_sl, i, fold_size, features);
+            assist_swap_array1(&mut targets_sl, i, fold_size);
+
+            let train = DatasetView::new(
+                ArrayView2::from_shape(
+                    (samples_count - fold_size, features),
+                    records_sl.split_at(fold_size * features).1,
+                )
+                .unwrap(),
+                ArrayView1::from_shape(samples_count - fold_size, targets_sl.split_at(fold_size).1)
+                    .unwrap(),
+            );
+
+            let obj = fit_closure(params, train);
+            objs.push(obj);
+
+            assist_swap_array2(&mut records_sl, i, fold_size, features);
+            assist_swap_array1(&mut targets_sl, i, fold_size);
+        }
+        objs.into_iter()
+            .zip(self.axis_chunks_iter(Axis(0), fold_size))
+    }
+}
+
+fn assist_swap_array1<E>(slice: &mut [E], index: usize, fold_size: usize) {
+    if index == 0 {
+        return;
+    }
+    let start = fold_size * index;
+    let end = fold_size * (index + 1);
+    let (first_s, second_s) = slice.split_at_mut(start);
+    let (mut fold, _) = second_s.split_at_mut(end);
+    first_s[..fold_size].swap_with_slice(&mut fold);
+}
+
+fn assist_swap_array2<F>(slice: &mut [F], index: usize, fold_size: usize, features: usize) {
+    if index == 0 {
+        return;
+    }
+    let start = fold_size * features * index;
+    let end = fold_size * features * (index + 1);
+    let (first_s, second_s) = slice.split_at_mut(start);
+    let (mut fold, _) = second_s.split_at_mut(end);
+    first_s[..fold_size].swap_with_slice(&mut fold);
 }
 
 impl<'a, F: Float, E: Copy> DatasetView<'a, F, E> {
@@ -421,5 +501,9 @@ impl<'a, F: Float, E: Copy> DatasetView<'a, F, E> {
             }
         }
         res
+    }
+
+    pub fn to_owned(&self) -> Dataset<F, E> {
+        (self.records().to_owned(), self.targets.to_owned()).into()
     }
 }
