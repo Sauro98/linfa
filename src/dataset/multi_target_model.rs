@@ -18,7 +18,7 @@ pub struct MultiTargetModel<R: Records, L> {
 impl<R: Records, L> MultiTargetModel<R, L> {
     /// Create a wrapper model from a list of single-target models
     ///
-    /// The type parameter of the single-target models are only constraint to implement the
+    /// The type parameter of the single-target models are only constrained to implement the
     /// prediction trait and can otherwise contain any object. This allows the mixture of different
     /// models into the same wrapper. If you want to use the same model for all predictions, just
     /// use the `FromIterator` implementation.

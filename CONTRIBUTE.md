@@ -16,7 +16,7 @@ impl<'a, F: Float> Fit<'a, Array2<F>, Array1<bool>> for SvmParams<F, Pr> {
     }
 }
 ```
-the type of the dataset is `&Dataset<Kernel<F>, Arrat1<bool>>`, and lifetime `'a` is the required lifetime for the fitted state. It produces a fitted state, called `Svm<F, Pr>` with probability type `Pr`.
+the type of the dataset is `&Dataset<Kernel<F>, Array1<bool>>`, and lifetime `'a` is the required lifetime for the fitted state. It produces a fitted state, called `Svm<F, Pr>` with probability type `Pr`.
 
 The [Predict](src/traits.rs) should be implemented with dataset arguments, as well as arrays. If a dataset is provided, then predict takes its ownership and returns a new dataset with predicted targets. For an array, predict takes a reference and returns predicted targets. In the same context, SVM implemented predict like this:
 ```rust
