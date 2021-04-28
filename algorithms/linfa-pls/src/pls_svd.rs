@@ -152,9 +152,13 @@ mod test {
     #[test]
     fn test_svd() -> Result<()> {
         // values checked against scikit-learn 0.24.1 PlsSVD
+        println!("svd bef ds");
         let ds = linnerud();
+        println!("svd after ds");
         let pls = PlsSvd::<f64>::params(3).fit(&ds)?;
+        println!("svd after fit");
         let ds = pls.transform(ds);
+        println!("svd after transform");
         let expected_x = array![
             [-0.37144954, -0.0544441, -0.82290137],
             [-1.34032497, 0.19638169, -0.71715313],
@@ -178,6 +182,7 @@ mod test {
             [-1.42542371, -0.12332727, -0.73851355]
         ];
         assert_abs_diff_eq!(expected_x, ds.records(), epsilon = 1e-6);
+        println!("svd after diff eq");
         Ok(())
     }
 }
