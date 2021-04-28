@@ -121,7 +121,6 @@ mod tests {
 
     #[test]
     fn test_pinv2() {
-
         println!("pinv2");
         let a = array![[1., 2., 3.], [4., 5., 6.], [7., 8., 10.]];
         let a_pinv2 = pinv2(a.view(), None);
