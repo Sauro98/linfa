@@ -112,6 +112,7 @@ mod tests {
 
     #[test]
     fn test_outer() {
+        println!("outer");
         let a = array![1., 2., 3.];
         let b = array![2., 3.];
         let expected = array![[2., 3.], [4., 6.], [6., 9.]];
@@ -120,6 +121,8 @@ mod tests {
 
     #[test]
     fn test_pinv2() {
+
+        println!("pinv2");
         let a = array![[1., 2., 3.], [4., 5., 6.], [7., 8., 10.]];
         let a_pinv2 = pinv2(a.view(), None);
         assert_abs_diff_eq!(a.dot(&a_pinv2), Array2::eye(3), epsilon = 1e-6)
