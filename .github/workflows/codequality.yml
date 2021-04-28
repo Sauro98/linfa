@@ -77,7 +77,7 @@ jobs:
 
       - name: Generate code coverage
         run: |
-          cargo +nightly-2021-03-24 tarpaulin --nocapture --verbose --features intel-mkl-system --timeout 120 --out Xml --all --release
+          cargo +nightly-2021-03-24 tarpaulin --verbose --features intel-mkl-system --timeout 120 --out Xml --all --release
 
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v1
